@@ -16,8 +16,14 @@ def get_image(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 @app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['POST'])
 def upload():
+    print("🔵 Upload route hit")
+    print(f"🔵 Request content-type: {request.content_type}")
+    print(f"🔵 Request files: {list(request.files.keys())}")
+
     if 'file' not in request.files:
+        print("❌ No file key in request")
         return jsonify({'error': 'No file part in the request'}), 400
     file = request.files['file']
     if file.filename == '':
