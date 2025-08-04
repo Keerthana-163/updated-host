@@ -30,4 +30,8 @@ def upload_file():
     # Construct public URL
     url = f"https://{request.host}/uploads/{unique_filename}"
     return jsonify({"image_url": url})
+if __name__ == "__main__":
+app.run(host="0.0.0.0", port=10000)
+
+
 
