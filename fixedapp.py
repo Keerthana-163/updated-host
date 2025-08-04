@@ -1,44 +1,33 @@
-from flask import Flask, request, send_from_directory, jsonify
+# server.py or app.py
+
 import os
+import uuid
+from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+UPLOAD_FOLDER = "uploads"
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-UPLOAD_FOLDER = os.path.join('static', 'images')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-@app.route('/')
-def index():
-    return "✅ Image Hosting Server Running!"
-
-@app.route('/images/<filename>')
-def get_image(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 @app.route('/upload', methods=['POST'])
-@app.route('/upload', methods=['POST'])
-def upload():
-    print("🔵 Upload route hit")
-    print(f"🔵 Request content-type: {request.content_type}")
-    print(f"🔵 Request files: {list(request.files.keys())}")
-
+def upload_file():
     if 'file' not in request.files:
-        print("❌ No file key in request")
-        return jsonify({'error': 'No file part in the request'}), 400
+        return jsonify({"error": "No file part"}), 400
     file = request.files['file']
+
     if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+        return jsonify({"error": "No selected file"}), 400
 
     filename = secure_filename(file.filename)
-    save_path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(save_path)
+    name, ext = os.path.splitext(filename)
+    unique_filename = f"{name}_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+    file.save(file_path)
 
-    server_url = request.host_url.rstrip('/')
-    image_url = f"{server_url}/images/{filename}"
+    # Construct public URL
+    url = f"https://{request.host}/uploads/{unique_filename}"
+    return jsonify({"image_url": url})
 
-    return jsonify({'image_url': image_url}), 200
-
-if __name__ == '__main__':
-    # 👇 Bind to PORT Render assigns dynamically
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
